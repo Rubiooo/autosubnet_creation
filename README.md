@@ -28,5 +28,5 @@ This command will create 14 subnets
 
 
 ## Installation:
-Create an S3 bucket in the same region that you want to create VPC, put 3 zip files in the bucket.
+Create an S3 bucket in the same region where you want to create a VPC, put 3 zip files in the bucket.
 The bucket name is the parameter of **LambdaBucket** in CreateBaseVpc.json
