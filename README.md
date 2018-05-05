@@ -4,9 +4,9 @@
  1. Create a VPC with internet gateway
  2. Create public subnets in each availability zone
  3. Create a NAT gateway and VPC endpoints (S3 endpoint and DynamoDB endpoint) in each subnet
- 4. Create a public route table with 0.0.0.0/0 points to internet gateway
- 5. Create an external route tables in each subnet, the default route set to the NAT gateway in same subnet, add route to VPC endpoints in same subnet
- 6. Create an internal route tables in each subnet, add route to VPC endpoints in same subnet
+ 4. Create a public route table with default route sets to internet gateway
+ 5. Create an external route table in each subnet, the default route sets to the NAT gateway in the same subnet, add route to VPC endpoints in the same subnet
+ 6. Create an internal route table in each subnet, add route to VPC endpoints in the same subnet
 ## Step 2:
 ### Execute SubnetAuto.json
  1. Create subnets based on requirement, for example::
