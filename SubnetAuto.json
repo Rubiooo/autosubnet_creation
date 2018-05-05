@@ -1,0 +1,50 @@
+{
+  "Parameters": {
+    "VpcStackName": {
+      "Type": "String",
+      "Description": "The stack name which is used to build the VPC"
+    },
+    "SubnetParameters": {
+      "Type": "String",
+      "Description": "Example: web1:50:1a:p,web1:50:1b:p,app1:50:1a:e,app1:50:1b:e,db1:50:1a:i,db1:50:1b:i. This will create 3 layer subnets for Web (50 hosts, across AZ 1a and 1b), App (50 hosts,across AZ 1a and 1b) and DB (50 hosts, across AZ 1a and 1b). Web layer has the capability to direct access to internet, App layer will access to internet via NAT Gateway, DB layer cannot access to internet. p - Public RouteTable(contains IGW), e - External RouteTable(contains NAT Gateway and VPC Endpoint), i - Internal RouteTable(contains VPC Endpoint)"
+    }
+  },
+  "Resources": {
+    "Subnets": {
+      "Type": "Custom::Subnets",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::ImportValue": {
+            "Fn::Join": ["", [{
+              "Ref": "VpcStackName"
+            }, "-subnetautoarn"]]
+          }
+        },
+        "VpcStackName": {
+          "Ref": "VpcStackName"
+        },
+        "SubnetParameters": {
+          "Ref": "SubnetParameters"
+        },
+        "VpcStackId": {
+          "Fn::ImportValue": {
+            "Fn::Join": ["", [{
+              "Ref": "VpcStackName"
+            }, "-stackid"]]
+          }
+        },
+        "StackId": {
+          "Ref": "AWS::StackId"
+        },
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Join": ["", [{
+              "Ref": "VpcStackName"
+            }, "-vpcid"]]
+          }
+        },
+        "debug": "True"
+      }
+    }
+  }
+}

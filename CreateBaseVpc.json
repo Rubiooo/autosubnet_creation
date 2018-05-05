@@ -1,0 +1,329 @@
+{
+  "Parameters": {
+    "VpcCidr": {
+      "Type": "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "Must be a valid CIDR range in the form x.x.x.x/16",
+      "Default": "10.20.0.0/16"
+    },
+    "VpcName": {
+      "Type": "String"
+    },
+    "LambdaBucket": {
+      "Type": "String",
+      "Description": "S3 bucket that contains subnet_creation.zip and create_shared_infra.zip"
+    },
+    "PublicSubnetCapacity": {
+      "Type": "String",
+      "Description": "The number of hosts that will be allcated in public subnet. Internet Gateway, NAT Gateway and VPC Endpoint (S3 and DynamoDB) will be put in this public subnets. The public subnets will across all AZs",
+      "Default": "50"
+    }
+  },
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Ref": "VpcCidr"
+        },
+        "Tags": [{
+            "Key": "Name",
+            "Value": {
+              "Ref": "VpcName"
+            }
+          }
+
+        ]
+      }
+    },
+    "IGW": {
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "GatewayAttach": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "IGW"
+        },
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "RouteDefaultPublic": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "GatewayAttach",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "IGW"
+        },
+        "RouteTableId": {
+          "Ref": "RouteTablePublic"
+        }
+      }
+    },
+    "RouteTablePublic": {
+      "Type": "AWS::EC2::RouteTable",
+      "DependsOn": [
+        "VPC"
+      ],
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [{
+            "Key": "Name",
+            "Value": "PublicRouteTable"
+          },
+          {
+            "Key": "Stack",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          },
+          {
+            "Key": "VPC",
+            "Value": {
+              "Fn::Join": ["", [{
+                "Ref": "VPC"
+              }]]
+            }
+          }
+        ]
+      }
+    },
+    "IAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [
+                "lambda.amazonaws.com"
+              ]
+            },
+            "Action": [
+              "sts:AssumeRole"
+            ]
+          }]
+        },
+        "Path": "/"
+      }
+    },
+    "IAMPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "DependsOn": [
+        "IAMRole"
+      ],
+      "Properties": {
+        "PolicyName": "create_infra_role",
+        "Roles": [{
+          "Ref": "IAMRole"
+        }],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+              "logs:*",
+              "ec2:*"
+            ],
+            "Resource": [
+              "*"
+            ]
+          }]
+        }
+      }
+    },
+    "SharedInfra": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "IAMRole",
+        "IAMPolicy"
+      ],
+      "Properties": {
+
+        "Role": {
+          "Fn::GetAtt": ["IAMRole", "Arn"]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "LambdaBucket"
+          },
+          "S3Key": "create_shared_infra.zip"
+        },
+        "Handler": "create_shared_infra.handler",
+        "Runtime": "python2.7",
+        "Timeout": "300",
+        "MemorySize": "128"
+      }
+    },
+    "CreateExternalRoute": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "IAMRole",
+        "IAMPolicy"
+      ],
+      "Properties": {
+
+        "Role": {
+          "Fn::GetAtt": ["IAMRole", "Arn"]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "LambdaBucket"
+          },
+          "S3Key": "create_external_route.zip"
+        },
+        "Handler": "create_external_route.handler",
+        "Runtime": "python2.7",
+        "Timeout": "300",
+        "MemorySize": "128"
+      }
+    },
+    "SubnetAutomation": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "IAMRole",
+        "IAMPolicy"
+      ],
+      "Properties": {
+
+        "Role": {
+          "Fn::GetAtt": ["IAMRole", "Arn"]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "LambdaBucket"
+          },
+          "S3Key": "subnet_creation.zip"
+        },
+        "Handler": "subnet_creation.handler",
+        "Runtime": "python2.7",
+        "Timeout": "300",
+        "MemorySize": "128"
+      }
+    },
+    "SharedInfraCreation": {
+      "Type": "Custom::PublicSubnet",
+      "DependsOn": [
+        "RouteTablePublic",
+        "RouteDefaultPublic"
+      ],
+
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "SharedInfra",
+            "Arn"
+          ]
+        },
+        "StackId": {
+          "Ref": "AWS::StackId"
+        },
+        "Region": {
+          "Ref": "AWS::Region"
+        },
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "NetWorkCapacity": {
+          "Ref": "PublicSubnetCapacity"
+        },
+        "debug": "True"
+      }
+    },
+    "ExternalRouteCreation": {
+      "Type": "Custom::PublicSubnet",
+      "DependsOn": [
+        "SharedInfraCreation"
+      ],
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CreateExternalRoute",
+            "Arn"
+          ]
+        },
+        "StackId": {
+          "Ref": "AWS::StackId"
+        },
+        "debug": "True"
+      }
+    }
+  },
+  "Outputs": {
+    "vpciprange": {
+      "Description": "Ip Range of VPC",
+      "Value": {
+        "Ref": "VpcCidr"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-vpciprange"
+        }
+      }
+    },
+    "vpcid": {
+      "Description": "ID of VPC",
+      "Value": {
+        "Ref": "VPC"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-vpcid"
+        }
+      }
+    },
+    "publicroutetable": {
+      "Description": "ID of Public Route Table",
+      "Value": {
+        "Ref": "RouteTablePublic"
+
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-publicrt"
+        }
+      }
+    },
+    "subnetautoarn": {
+      "Description": "ARN of Subnet Automation Lambda",
+      "Value": {
+        "Fn::GetAtt": ["SubnetAutomation", "Arn"]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-subnetautoarn"
+        }
+      }
+    },
+    "sharedinfraarn": {
+      "Description": "ARN of Shared Infrastructure Lambda",
+      "Value": {
+        "Fn::GetAtt": ["SharedInfra", "Arn"]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-sharedinfraarn"
+        }
+      }
+    },
+    "stackid": {
+      "Description": "Stack ID",
+      "Value": {
+        "Ref": "AWS::StackId"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-stackid"
+        }
+      }
+    }
+  }
+}
