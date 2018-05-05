@@ -1,3 +1,4 @@
+## This is a set of CloudFormation template and lambda functions.
 ## Step 1:
 ### Execute CreateBaseVpc.json
  1. Create a VPC with internet gateway
