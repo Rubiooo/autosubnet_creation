@@ -23,4 +23,4 @@ This command will create 14 subnets
 
  2 .Associate appropriate route table to each subnet
 ## Step 3:
- If you want to create more subnets, just execute SubnetAuto.json for any times you want.
+ If you want to create more subnets, just execute SubnetAuto.json as any times as you want.
