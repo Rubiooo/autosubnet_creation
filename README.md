@@ -16,7 +16,7 @@
 > This command will create 2 subnets, the function of the subnet is "f5", the servers that will be hosted in each subnet is "10", the first subnet will be created in availability zone "1a", the second subnet will be created in availability zone "1b". The route table will be associated to each subnet is "p", which means public route table.
       
 
-> The route table type can be: p, e and i. You need to pay attention to the total number of subnets that can be created to avoid lambda time out. For example, if you use 128MB memory, the total number should no more than 14.  If you set the memory size to 1024MB, you can create 30 subnets at one time.
+> The route table type can be: p, e and i. You need to pay attention to the total number of subnets that can be created to avoid lambda time out. For example, if you use 128MB memory, the total number should be no more than 14.  If you set the memory size to 1024MB, then you can create 30 subnets at one time.
 ```
 f5:10:1a:p,f5:10:1b:p,web01:20:1a:e,web01:20:1b:e,app01:30:1a:e,app01:30:1b:e,db01:15:1a:i,db01:15:1b:i,web02:20:1a:e,web02:20:1b:e,app02:30:1a:e,app02:30:1b:e,db02:15:1a:i,db02:15:1b:i
 ```
