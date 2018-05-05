@@ -54,7 +54,7 @@
     },
     "RouteDefaultPublic": {
       "Type": "AWS::EC2::Route",
-      "DependsOn": "GatewayAttach",
+      "DependsOn": ["GatewayAttach", "RouteTablePublic"],
       "Properties": {
         "DestinationCidrBlock": "0.0.0.0/0",
         "GatewayId": {
@@ -147,7 +147,6 @@
         "IAMPolicy"
       ],
       "Properties": {
-
         "Role": {
           "Fn::GetAtt": ["IAMRole", "Arn"]
         },
@@ -170,7 +169,6 @@
         "IAMPolicy"
       ],
       "Properties": {
-
         "Role": {
           "Fn::GetAtt": ["IAMRole", "Arn"]
         },
@@ -213,9 +211,8 @@
       "Type": "Custom::PublicSubnet",
       "DependsOn": [
         "RouteTablePublic",
-        "RouteDefaultPublic"
+        "VPC"
       ],
-
       "Properties": {
         "ServiceToken": {
           "Fn::GetAtt": [
@@ -239,7 +236,7 @@
       }
     },
     "ExternalRouteCreation": {
-      "Type": "Custom::PublicSubnet",
+      "Type": "Custom::Route",
       "DependsOn": [
         "SharedInfraCreation"
       ],
