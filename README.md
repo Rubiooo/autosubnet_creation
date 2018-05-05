@@ -22,5 +22,5 @@ f5:10:1a:p,f5:10:1b:p,web01:20:1a:e,web01:20:1b:e,app01:30:1a:e,app01:30:1b:e,db
 This command will create 14 subnets
 
  2 .Associate appropriate route table to each subnet
-# Step 3:
+## Step 3:
  If you want to create more subnets, just execute SubnetAuto.json for any times you want.
