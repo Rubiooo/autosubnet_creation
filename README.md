@@ -1,6 +1,6 @@
 ## This is a set of CloudFormation template and lambda functions. The initial idea comes from https://github.com/ACloudGuru/AdvancedCloudFormation/tree/master/206-LambdaCustomEnhancements. I made some modifications:
 1. Do not use DynamoDB
-2. Add new feature to allow create different subnets CIDR(the number of subnet and the route table of subnet can be changed) based on input parameter
+2. Add new feature to allow create different subnets(the number of subnet and the route table of subnet can be changed) based on input parameter
 
 ## Step 1:
 ### Execute CreateBaseVpc.json
